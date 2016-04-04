@@ -53,30 +53,33 @@ public class BundleVersionChecker
 	static BundleVersionChecker () {
 		string bundleVersion = PlayerSettings.bundleVersion;
 		string bundleIdentifier = PlayerSettings.bundleIdentifier;
-		string targetDir = PlayerPrefs.GetString ("BundleVersionChecker.TargetDir");
-		if (string.IsNullOrEmpty (targetDir) || !Directory.Exists (targetDir)) {
+		var prefs = ConfigBundleVersionChecker.Prefs;
+		string targetDir = prefs.TargetDir;
+		if (string.IsNullOrEmpty (targetDir) || !Directory.Exists (Application.dataPath + targetDir)) {
 			string[] files = Directory.GetFiles (Application.dataPath, ConfigBundleVersionChecker.TrackedClassName + ".cs", SearchOption.AllDirectories);
 			if (files != null && files.Length == 1) {
 				targetDir = Path.GetDirectoryName (files[0]);
 				Debug.Log (string.Format("Found previous version of {0} in directory {1}. This will be used for future generation.", ConfigBundleVersionChecker.TrackedClassName, targetDir));
-				PlayerPrefs.SetString ("BundleVersionChecker.TargetDir", targetDir);
-				PlayerPrefs.Save ();
+				prefs.TargetDir = ConfigBundleVersionChecker.ToRelativePath(targetDir);
+				ConfigBundleVersionChecker.SavePrefs();
 			} else {
 				targetDir = EditorUtility.SaveFolderPanel ("Target Folder For Generated Classes", Application.dataPath, "Generated");
 				if (!string.IsNullOrEmpty (targetDir)) {
-					PlayerPrefs.SetString ("BundleVersionChecker.TargetDir", targetDir);
+					prefs.TargetDir = ConfigBundleVersionChecker.ToRelativePath(targetDir);
+					ConfigBundleVersionChecker.SavePrefs();
 				} else {
 					return;
 				}
 			}
 		}
-		string templateDir = PlayerPrefs.GetString ("BundleVersionChecker.TemplateDir");
-		if (string.IsNullOrEmpty (templateDir) || !Directory.Exists (templateDir)) {
+		string templateDir = prefs.TemplateDir;
+		if (string.IsNullOrEmpty (templateDir) || !Directory.Exists (Application.dataPath + templateDir)) {
 			string[] files = Directory.GetFiles (Application.dataPath, ConfigBundleVersionChecker.TemplateFileSearchPattern, SearchOption.AllDirectories);
 //			Debug.Log (string.Format("Search : {0} found : {1}", Application.dataPath, (files != null && files.Length > 0 ? files[0] : "(none)")));
 			if (files != null && files.Length == 1) {
 				templateDir = Path.GetDirectoryName (files[0]);
-				PlayerPrefs.SetString ("BundleVersionChecker.TemplateDir", templateDir);
+				prefs.TemplateDir = ConfigBundleVersionChecker.ToRelativePath(templateDir);
+				ConfigBundleVersionChecker.SavePrefs();
 			} else {
 				Debug.LogWarning ("Could not find template at relative path " + ConfigBundleVersionChecker.TemplateFileSearchPattern + 
 				                  "! Please check your installation of BundleVersionChecker. Reinstall it if there is no such file");

@@ -19,6 +19,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 using UnityEngine;
+using System.IO;
 
 /// <summary>
 /// Configuration constants for BundleVersionChecker and generator classes.
@@ -61,13 +62,15 @@ public static class ConfigBundleVersionChecker
 	/// the class(es) to be generated.
 	/// </summary>
 	public static string TargetDir {
-		get { return PlayerPrefs.GetString ("BundleVersionChecker.TargetDir"); }
+		get {
+			return Application.dataPath + Prefs.TargetDir;
+		}
 	}
 	
 	public static string TrackedBundleVersionInfoTemplate {
-		get { 
-			string templateDir = PlayerPrefs.GetString ("BundleVersionChecker.TemplateDir");
-			return templateDir + "/" + TrackedBundleVersionInfoName + ".txt";
+		get {
+			string templateDir = Prefs.TemplateDir;
+			return Application.dataPath + templateDir + "/" + TrackedBundleVersionInfoName + ".txt";
 		}
 	}
 	public static string TrackedBundleVersionInfoTarget {
@@ -78,6 +81,43 @@ public static class ConfigBundleVersionChecker
 
 	static ConfigBundleVersionChecker ()
 	{
+	}
+
+	static ConfigBundleVersionCheckerPrefs prefs_;
+	public static ConfigBundleVersionCheckerPrefs Prefs {
+		get {
+			if (prefs_ == null) {
+				var filename = Application.dataPath + @"/../BundleVersionCheckerPrefs.json";
+				var content = "";
+				if (File.Exists(filename)) {
+					using (var reader = new StreamReader(filename, System.Text.Encoding.GetEncoding("utf-8"))) {
+						content = reader.ReadToEnd();
+					}
+				}
+				if (string.IsNullOrEmpty(content)) {
+					prefs_ = new ConfigBundleVersionCheckerPrefs();
+				} else {
+					prefs_ = JsonUtility.FromJson<ConfigBundleVersionCheckerPrefs>(content);
+				}
+			}
+			return prefs_;
+		}
+	}
+
+	public static void SavePrefs()
+	{
+		if (prefs_ != null) {
+			using (var writer = new StreamWriter(Application.dataPath + @"/../BundleVersionCheckerPrefs.json", false)) {
+				var content = JsonUtility.ToJson(prefs_);
+				writer.Write("{0}", content);
+			}
+		}
+	}
+
+	public static string ToRelativePath(string path)
+	{
+		path = path.Replace("\\", "/").Replace(Application.dataPath, "");
+		return path;
 	}
 }
 
